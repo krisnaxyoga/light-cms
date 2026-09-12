@@ -1,0 +1,13 @@
+{
+  "name": "lightcms-admin-ui",
+  "private": true,
+  "description": "Build tooling for the LightCMS admin UI (Tailwind CSS 3 + daisyUI 4). The built stylesheet is committed, so running LightCMS still needs no build step.",
+  "scripts": {
+    "build:css": "tailwindcss -i resources/css/admin.css -o public/assets/admin/css/admin-ui.css --minify",
+    "dev:css": "tailwindcss -i resources/css/admin.css -o public/assets/admin/css/admin-ui.css --watch"
+  },
+  "devDependencies": {
+    "daisyui": "^4.12.14",
+    "tailwindcss": "^3.4.17"
+  }
+}

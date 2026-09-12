@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * LightCMS admin UI — Tailwind 3 + daisyUI 4.
+ * Build with `npm run build:css`; the output is committed.
+ */
+
+@layer base {
+    /* The theme is written to <html data-theme> by an inline script in
+       _header.php before paint, so there is no flash of the wrong theme. */
+    html {
+        scroll-behavior: smooth;
+    }
+}
+
+@layer components {
+    /**
+     * WordPress plugin screens (admin/wp/<slug>) echo wp-admin markup we do
+     * not control — `.wrap`, `.form-table`, `.button`, `.notice`. Tailwind's
+     * preflight strips the browser defaults those relied on, so map them onto
+     * daisyUI equivalents here and plugin settings pages stay usable.
+     */
+    .lcms-wp-screen h1,
+    .lcms-wp-screen h2 {
+        @apply font-semibold text-base-content;
+    }
+
+    .lcms-wp-screen h1 {
+        @apply text-xl mb-4;
+    }
+
+    .lcms-wp-screen h2 {
+        @apply text-lg mt-6 mb-2;
+    }
+
+    .lcms-wp-screen p {
+        @apply mb-3 text-sm;
+    }
+
+    .lcms-wp-screen a {
+        @apply link link-primary;
+    }
+
+    .lcms-wp-screen .form-table {
+        @apply w-full text-sm my-2;
+    }
+
+    .lcms-wp-screen .form-table th {
+        @apply text-left align-top py-3 pr-4 font-medium w-56;
+    }
+
+    .lcms-wp-screen .form-table td {
+        @apply py-3;
+    }
+
+    .lcms-wp-screen input[type='text'],
+    .lcms-wp-screen input[type='email'],
+    .lcms-wp-screen input[type='url'],
+    .lcms-wp-screen input[type='number'],
+    .lcms-wp-screen input[type='password'],
+    .lcms-wp-screen select,
+    .lcms-wp-screen textarea {
+        @apply input input-bordered input-sm w-full max-w-md;
+    }
+
+    .lcms-wp-screen textarea {
+        @apply h-auto py-2 leading-relaxed;
+    }
+
+    .lcms-wp-screen input[type='checkbox'] {
+        @apply checkbox checkbox-sm;
+    }
+
+    .lcms-wp-screen .button,
+    .lcms-wp-screen button[type='submit'] {
+        @apply btn btn-sm;
+    }
+
+    .lcms-wp-screen .button-primary,
+    .lcms-wp-screen .button.button-primary {
+        @apply btn-primary;
+    }
+
+    .lcms-wp-screen .notice {
+        @apply alert my-4 text-sm;
+    }
+
+    .lcms-wp-screen .notice-error {
+        @apply alert-error;
+    }
+
+    .lcms-wp-screen .notice-success {
+        @apply alert-success;
+    }
+
+    .lcms-wp-screen .notice-warning {
+        @apply alert-warning;
+    }
+
+    .lcms-wp-screen ul,
+    .lcms-wp-screen ol {
+        @apply list-disc pl-6 text-sm mb-3;
+    }
+
+    /* CodeIgniter's pager markup (`$pager->links()`), styled as a daisyUI join. */
+    .lcms-pager nav ul {
+        @apply join flex flex-wrap;
+    }
+
+    .lcms-pager nav li a,
+    .lcms-pager nav li span {
+        @apply join-item btn btn-sm;
+    }
+
+    /* CodeIgniter renders the current page as an <a> inside li.active. */
+    .lcms-pager nav li.active a,
+    .lcms-pager nav li.active span,
+    .lcms-pager nav li[aria-current] a {
+        @apply btn-primary;
+    }
+
+    .lcms-pager nav li.disabled span {
+        @apply btn-disabled;
+    }
+}

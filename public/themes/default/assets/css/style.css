@@ -1,0 +1,123 @@
+/* LightCMS default theme — deliberately small (PRD §2.2: frontend CSS < 50KB) */
+
+:root {
+  --lcms-primary: #3498db;
+  --lcms-secondary: #2ecc71;
+  --lcms-text: #222;
+  --lcms-bg: #fff;
+  --lcms-border: #e5e5e5;
+  --lcms-radius: 6px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--lcms-text);
+  background: var(--lcms-bg);
+  line-height: 1.6;
+}
+
+.lcms-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.lcms-layout--boxed .lcms-container { max-width: 1100px; }
+.lcms-layout--full-width .lcms-container { max-width: 100%; }
+
+/* Header */
+.lcms-site-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--lcms-border);
+}
+.lcms-logo { font-weight: 700; font-size: 1.25rem; color: var(--lcms-primary); text-decoration: none; }
+.lcms-nav ul { list-style: none; display: flex; gap: 20px; margin: 0; padding: 0; position: relative; }
+.lcms-nav a { text-decoration: none; color: var(--lcms-text); }
+.lcms-nav__submenu { display: none; position: absolute; background: var(--lcms-bg); border: 1px solid var(--lcms-border); padding: 8px 0; }
+.lcms-nav li:hover > .lcms-nav__submenu { display: block; }
+
+/* Layout */
+.lcms-main { padding: 32px 0; min-height: 60vh; }
+.lcms-content-layout { display: grid; grid-template-columns: 1fr; gap: 32px; }
+.lcms-content-layout--left { grid-template-columns: 260px 1fr; }
+.lcms-content-layout--right { grid-template-columns: 1fr 260px; }
+@media (max-width: 768px) {
+  .lcms-content-layout--left,
+  .lcms-content-layout--right { grid-template-columns: 1fr; }
+}
+
+/* Post card */
+.lcms-post-card { margin-bottom: 32px; padding-bottom: 32px; border-bottom: 1px solid var(--lcms-border); }
+.lcms-post-card__image { width: 100%; height: auto; border-radius: var(--lcms-radius); margin-bottom: 12px; }
+.lcms-post-card__title { margin: 0 0 8px; font-size: 1.5rem; }
+.lcms-post-card__title a { color: inherit; text-decoration: none; }
+.lcms-post-card__meta { color: #777; font-size: 0.875rem; margin: 0 0 8px; }
+.lcms-post-card__excerpt { margin: 0 0 12px; }
+
+/* Buttons */
+.lcms-btn {
+  display: inline-block;
+  padding: 10px 18px;
+  border-radius: var(--lcms-radius);
+  text-decoration: none;
+  font-weight: 600;
+}
+.lcms-btn--primary { background: var(--lcms-primary); color: #fff; }
+.lcms-btn--secondary { background: var(--lcms-secondary); color: #fff; }
+
+/* Single post */
+.lcms-single__title { font-size: 2rem; margin-bottom: 8px; }
+.lcms-single__meta { color: #777; font-size: 0.875rem; }
+.lcms-single__image { width: 100%; border-radius: var(--lcms-radius); margin: 16px 0; }
+.lcms-tag { display: inline-block; margin-right: 8px; color: var(--lcms-primary); text-decoration: none; }
+
+/* Blocks (rendered by BlockRenderer) */
+.lcms-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.lcms-gallery img { width: 100%; border-radius: var(--lcms-radius); }
+.lcms-columns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+.lcms-cta { background: #f5f8fa; border-radius: var(--lcms-radius); padding: 24px; text-align: center; }
+.lcms-accordion__item { border: 1px solid var(--lcms-border); border-radius: var(--lcms-radius); padding: 12px 16px; margin-bottom: 8px; }
+.lcms-spacer { width: 100%; }
+.lcms-separator { border: none; border-top: 1px solid var(--lcms-border); margin: 24px 0; }
+
+/* SEO score badge (admin) */
+.lcms-seo-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; color: #fff; }
+.lcms-seo-badge--green { background: #2ecc71; }
+.lcms-seo-badge--yellow { background: #f1c40f; color: #333; }
+.lcms-seo-badge--red { background: #e74c3c; }
+
+/* Footer */
+.lcms-site-footer { border-top: 1px solid var(--lcms-border); padding: 32px 0; margin-top: 32px; color: #777; font-size: 0.875rem; }
+.lcms-footer__link { display: block; margin-bottom: 4px; color: inherit; text-decoration: none; }
+
+/* Block editor output (image alignment, figures, quotes, code, tables) */
+.alignleft { float: left; margin: 0 20px 12px 0; max-width: 50%; }
+.alignright { float: right; margin: 0 0 12px 20px; max-width: 50%; }
+/* The align class sits on the outermost element the image block emits —
+   the <img> itself, or the <a>/<figure> wrapping it — so these have to
+   work for all three. */
+.aligncenter { display: block; margin-left: auto; margin-right: auto; text-align: center; }
+a.aligncenter img, figure.aligncenter img { margin-left: auto; margin-right: auto; }
+.alignwide { display: block; width: 100%; max-width: none; }
+a.alignwide img, figure.alignwide img { width: 100%; }
+.lcms-single__body a img, .lcms-page__body a img { display: block; }
+.lcms-single__body::after, .lcms-page__body::after { content: ""; display: table; clear: both; }
+.lcms-single__body img, .lcms-page__body img { max-width: 100%; height: auto; border-radius: var(--lcms-radius); }
+.lcms-single__body figure, .lcms-page__body figure { margin: 0 0 20px; }
+.lcms-single__body figcaption, .lcms-page__body figcaption { font-size: .875rem; color: #777; text-align: center; padding-top: 6px; }
+.lcms-single__body blockquote, .lcms-page__body blockquote { border-left: 4px solid var(--lcms-primary); margin: 0 0 20px; padding: 8px 16px; color: #555; font-style: italic; }
+.lcms-single__body blockquote cite, .lcms-page__body blockquote cite { display: block; font-size: .875rem; font-style: normal; margin-top: 8px; color: #777; }
+.lcms-single__body pre, .lcms-page__body pre { background: #1e1e1e; color: #eee; padding: 16px; border-radius: var(--lcms-radius); overflow: auto; font-size: .9rem; }
+.lcms-single__body code, .lcms-page__body code { font-family: Menlo, Consolas, monospace; }
+.lcms-single__body p code, .lcms-page__body p code { background: #f0f0f0; padding: 1px 4px; border-radius: 3px; font-size: .9em; }
+.lcms-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+.lcms-table td { border: 1px solid var(--lcms-border); padding: 8px 10px; }
+.lcms-video-embed iframe, .lcms-video-embed video, video, audio { max-width: 100%; }
+.lcms-embed { border: 1px dashed var(--lcms-border); padding: 16px; color: #777; word-break: break-all; }
+.lcms-embed::before { content: attr(data-embed-url); }

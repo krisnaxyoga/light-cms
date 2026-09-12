@@ -1,0 +1,105 @@
+/* LightCMS admin UI — no framework, budget < 100KB (PRD §8.1). */
+
+:root {
+  --admin-bg: #f4f6f8;
+  --admin-panel: #fff;
+  --admin-border: #e1e4e8;
+  --admin-text: #24292e;
+  --admin-primary: #3498db;
+  --admin-danger: #e74c3c;
+  --admin-radius: 6px;
+}
+
+* { box-sizing: border-box; }
+body.lcms-admin {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--admin-bg);
+  color: var(--admin-text);
+}
+
+.lcms-admin__shell { display: flex; min-height: 100vh; }
+.lcms-admin__sidebar {
+  width: 220px;
+  background: #1f2733;
+  color: #fff;
+  padding: 20px 0;
+  flex-shrink: 0;
+}
+.lcms-admin__brand { font-weight: 700; font-size: 1.25rem; padding: 0 20px 20px; }
+.lcms-admin__sidebar nav { display: flex; flex-direction: column; }
+.lcms-admin__sidebar nav a { color: #cfd6e0; text-decoration: none; padding: 10px 20px; }
+.lcms-admin__sidebar nav a:hover { background: #2a3444; color: #fff; }
+
+.lcms-admin__content { flex: 1; padding: 24px 32px; overflow-x: auto; }
+.lcms-admin__topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+
+.lcms-alert { padding: 12px 16px; border-radius: var(--admin-radius); margin-bottom: 16px; }
+.lcms-alert--success { background: #eafaf1; color: #1e8449; }
+.lcms-alert--error { background: #fdedec; color: #c0392b; }
+
+.lcms-panel { background: var(--admin-panel); border: 1px solid var(--admin-border); border-radius: var(--admin-radius); padding: 20px; margin-bottom: 20px; }
+.lcms-columns-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.lcms-columns-2--editor { grid-template-columns: 2fr 1fr; align-items: start; }
+@media (max-width: 900px) { .lcms-columns-2, .lcms-columns-2--editor { grid-template-columns: 1fr; } }
+
+.lcms-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.lcms-stat-card { background: var(--admin-panel); border: 1px solid var(--admin-border); border-radius: var(--admin-radius); padding: 16px; text-align: center; }
+.lcms-stat-card span { display: block; font-size: 1.75rem; font-weight: 700; color: var(--admin-primary); }
+
+label { display: block; margin-bottom: 14px; font-weight: 600; font-size: 0.875rem; }
+input[type="text"], input[type="number"], input[type="password"], input[type="datetime-local"], select, textarea {
+  display: block; width: 100%; margin-top: 4px; padding: 8px 10px;
+  border: 1px solid var(--admin-border); border-radius: var(--admin-radius); font: inherit;
+}
+.lcms-checkbox { display: flex; align-items: center; gap: 8px; font-weight: 400; }
+.lcms-hint { display: block; font-weight: 400; color: #6a737d; font-size: 0.75rem; margin-top: 2px; }
+
+.lcms-btn { display: inline-block; padding: 8px 16px; border: none; border-radius: var(--admin-radius); cursor: pointer; text-decoration: none; font-weight: 600; background: #eee; color: #333; }
+.lcms-btn--primary { background: var(--admin-primary); color: #fff; }
+.lcms-btn--secondary { background: #eaf4fb; color: var(--admin-primary); }
+.lcms-link-btn { background: none; border: none; color: var(--admin-primary); cursor: pointer; padding: 0; text-decoration: underline; font: inherit; }
+.lcms-link-btn--danger { color: var(--admin-danger); }
+
+.lcms-toolbar { margin-bottom: 16px; display: flex; gap: 8px; align-items: center; }
+.lcms-inline-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.lcms-table { width: 100%; border-collapse: collapse; background: var(--admin-panel); }
+.lcms-table th, .lcms-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--admin-border); font-size: 0.9rem; }
+.lcms-table__actions { display: flex; gap: 8px; }
+
+.lcms-status { padding: 2px 8px; border-radius: 999px; font-size: 0.75rem; text-transform: capitalize; background: #eee; }
+.lcms-status--published { background: #eafaf1; color: #1e8449; }
+.lcms-status--draft { background: #fef9e7; color: #b9770e; }
+.lcms-status--trash { background: #fdedec; color: #c0392b; }
+
+.lcms-seo-badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; color: #fff; background: #aaa; }
+.lcms-seo-badge--green { background: #2ecc71; }
+.lcms-seo-badge--yellow { background: #f1c40f; color: #333; }
+.lcms-seo-badge--red { background: #e74c3c; }
+.lcms-seo-suggestions { list-style: none; padding: 0; margin: 10px 0 0; font-size: 0.8rem; }
+.lcms-seo-suggestion { padding: 6px 8px; border-radius: 4px; margin-bottom: 4px; }
+.lcms-seo-suggestion--error { background: #fdedec; color: #c0392b; }
+.lcms-seo-suggestion--warning { background: #fef9e7; color: #b9770e; }
+
+.lcms-media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }
+.lcms-media-item { background: var(--admin-panel); border: 1px solid var(--admin-border); border-radius: var(--admin-radius); padding: 8px; text-align: center; }
+.lcms-media-item img { width: 100%; height: 120px; object-fit: cover; border-radius: 4px; }
+.lcms-media-item__name { font-size: 0.75rem; word-break: break-all; }
+
+.lcms-theme-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.lcms-theme-card { background: var(--admin-panel); border: 1px solid var(--admin-border); border-radius: var(--admin-radius); padding: 16px; }
+.lcms-theme-card.is-active { border-color: var(--admin-primary); }
+.lcms-theme-card__screenshot { background: #f0f2f5; border-radius: 4px; height: 120px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; overflow: hidden; }
+.lcms-theme-card__screenshot img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Login screen */
+.lcms-admin--centered { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+.lcms-login { background: var(--admin-panel); border: 1px solid var(--admin-border); border-radius: var(--admin-radius); padding: 32px; width: 320px; }
+.lcms-login h1 { text-align: center; color: var(--admin-primary); }
+
+/* Profile screen */
+.lcms-admin__user { color: var(--admin-text); text-decoration: none; font-size: 0.875rem; }
+.lcms-admin__user:hover { color: var(--admin-primary); text-decoration: underline; }
+.lcms-panel h2 { margin: 0 0 4px; font-size: 1rem; }
+.lcms-panel h2 + .lcms-hint { display: block; margin-bottom: 16px; }

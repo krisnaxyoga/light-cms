@@ -1,0 +1,28 @@
+{
+  "name": "Default Theme",
+  "version": "1.0.0",
+  "author": "LightCMS",
+  "description": "Lightweight default theme shipped with LightCMS",
+  "support": {
+    "widgets": true,
+    "menus": true,
+    "custom_logo": true,
+    "custom_colors": true,
+    "custom_fonts": false
+  },
+  "settings": {
+    "layout": "boxed",
+    "sidebar_position": "right",
+    "primary_color": "#3498db",
+    "secondary_color": "#2ecc71"
+  },
+  "menus": {
+    "primary": "Primary Menu",
+    "footer": "Footer Menu"
+  },
+  "widget_areas": {
+    "sidebar": "Main Sidebar",
+    "footer_1": "Footer Column 1",
+    "footer_2": "Footer Column 2"
+  }
+}
