@@ -82,8 +82,9 @@ class GitLabDeployer
 
     protected function getGitHubLatestCommit(array $config): array
     {
-        $path   = '/repos/' . rawurlencode($config['project_id']) . '/commits/' . rawurlencode($config['branch']);
-        $commit = $this->apiGetGitHub($config, $path);
+        $projectId = str_replace('%2F', '/', rawurlencode($config['project_id']));
+        $path      = '/repos/' . $projectId . '/commits/' . rawurlencode($config['branch']);
+        $commit    = $this->apiGetGitHub($config, $path);
 
         return [
             'sha'       => $commit['sha'],
@@ -457,7 +458,8 @@ class GitLabDeployer
         $platform = $this->detectPlatform($config['gitlab_url']);
 
         if ($platform === 'github') {
-            $url = 'https://api.github.com/repos/' . rawurlencode($config['project_id']) . '/zipball/' . rawurlencode($sha);
+            $projectId = str_replace('%2F', '/', rawurlencode($config['project_id']));
+            $url       = 'https://api.github.com/repos/' . $projectId . '/zipball/' . rawurlencode($sha);
         } else {
             $url = $config['gitlab_url'] . '/api/v4/projects/' . rawurlencode($config['project_id'])
                 . '/repository/archive.zip?sha=' . rawurlencode($sha);
