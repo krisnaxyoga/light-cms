@@ -165,6 +165,7 @@ class MediaController extends BaseController
         ];
 
         $newBaseName = trim((string) $this->request->getPost('filename'));
+        $renamed     = null;
 
         if ($newBaseName !== '') {
             $renamed = $this->renameOnDisk($media, $newBaseName);
@@ -177,6 +178,14 @@ class MediaController extends BaseController
         }
 
         if (! $this->mediaModel->update($id, $data)) {
+            // The file(s) were already moved on disk above, but the
+            // metadata save that was supposed to follow it just failed —
+            // move them back rather than stranding a renamed file the DB
+            // has no record of.
+            if ($renamed !== null) {
+                $this->undoRenameOnDisk($media, $renamed);
+            }
+
             return $this->response->setJSON(['error' => implode(' ', $this->mediaModel->errors() ?: [])])->setStatusCode(422);
         }
 
@@ -246,30 +255,49 @@ class MediaController extends BaseController
             return null; // that name is already taken by a different file in this folder
         }
 
-        if (! @rename($dir . $media['filename'], $dir . $newName)) {
-            return null;
-        }
-
         $newRelativePath = dirname($media['filepath']) . '/' . $newName;
-        $newVariants     = null;
 
-        // Reuse ImageProcessor's own naming rules (same ones that created
-        // these files) rather than reverse-engineering a suffix from the
-        // old path — 'webp' is the same base name with its extension
-        // swapped, every other key is a thumbnail size named "-{key}".
+        // Build every on-disk move up front (primary first, then variants)
+        // instead of doing the primary rename immediately and the variants
+        // in a second, separate pass. A webp-native upload's own "webp"
+        // variant is just an alias of the primary file — withNewExtension()
+        // on a path that's already .webp returns that same path — so it
+        // rides along with the primary move below instead of getting a
+        // rename() of its own (that second rename used to run against a
+        // source the primary move had already renamed away, fail, and
+        // leave the DB's 'webp' entry pointing at a now-dead path).
+        $moves       = [$media['filepath'] => $newRelativePath];
+        $newVariants = null;
+
         foreach ($media['variants'] ?? [] as $key => $oldVariantPath) {
+            if ($oldVariantPath === $media['filepath']) {
+                $newVariants[$key] = $newRelativePath;
+                continue;
+            }
+
             $newVariantPath = $key === 'webp'
                 ? $this->imageProcessor->withNewExtension($newRelativePath, 'webp')
                 : $this->imageProcessor->withSuffix($newRelativePath, "-{$key}");
 
-            if (@rename(FCPATH . $oldVariantPath, FCPATH . $newVariantPath)) {
-                $newVariants[$key] = $newVariantPath;
-            } else {
-                // Couldn't move this one — keep its old path rather than
-                // silently losing the reference (the file itself is
-                // untouched, just not renamed alongside the others).
-                $newVariants[$key] = $oldVariantPath;
+            $moves[$oldVariantPath] = $newVariantPath;
+            $newVariants[$key]      = $newVariantPath;
+        }
+
+        // Apply every move, and if any single one fails partway through,
+        // roll back the ones already done — never leave the file(s) split
+        // across a mix of old and new names.
+        $done = [];
+
+        foreach ($moves as $from => $to) {
+            if (! @rename(FCPATH . $from, FCPATH . $to)) {
+                foreach ($done as $rolledFrom => $rolledTo) {
+                    @rename(FCPATH . $rolledTo, FCPATH . $rolledFrom);
+                }
+
+                return null;
             }
+
+            $done[$from] = $to;
         }
 
         return [
@@ -277,6 +305,22 @@ class MediaController extends BaseController
             'filepath' => $newRelativePath,
             'variants' => $newVariants,
         ];
+    }
+
+    /** Reverses a successful renameOnDisk() when the DB save right after it fails. */
+    protected function undoRenameOnDisk(array $originalMedia, array $renamed): void
+    {
+        if ($renamed['filepath'] !== $originalMedia['filepath']) {
+            @rename(FCPATH . $renamed['filepath'], FCPATH . $originalMedia['filepath']);
+        }
+
+        foreach ($renamed['variants'] ?? [] as $key => $newPath) {
+            $oldPath = $originalMedia['variants'][$key] ?? null;
+
+            if ($oldPath !== null && $oldPath !== $newPath) {
+                @rename(FCPATH . $newPath, FCPATH . $oldPath);
+            }
+        }
     }
 
     /**
