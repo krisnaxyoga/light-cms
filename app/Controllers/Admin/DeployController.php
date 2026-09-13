@@ -18,6 +18,7 @@ class DeployController extends BaseController
 {
     public function index()
     {
+        set_time_limit(0);
         $deployer = new GitLabDeployer();
         $config   = $deployer->config();
 
@@ -65,6 +66,7 @@ class DeployController extends BaseController
 
     public function pull()
     {
+        set_time_limit(0);
         $result = (new GitLabDeployer())->pull(session('userId'));
 
         if ($result['success']) {
@@ -79,6 +81,7 @@ class DeployController extends BaseController
 
     public function restore(string $filename)
     {
+        set_time_limit(0);
         $result = (new GitLabDeployer())->restoreBackup($filename, session('userId'));
 
         session()->setFlashdata($result['success'] ? 'success' : 'error', $result['message']);
