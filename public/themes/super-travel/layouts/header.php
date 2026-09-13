@@ -54,8 +54,9 @@
             </div>
         <?php endif; ?>
 
-        <a class="st-nav__cta" href="<?= esc(theme_option('cta_url', '/'), 'attr') ?>">
-            <?= esc(theme_option('cta_label', 'Get in touch')) ?>
+        <?php $ctaUrl = theme_option('cta_url', '') ?: whatsapp_url(); ?>
+        <a class="st-nav__cta" href="<?= esc(st_wa_link($ctaUrl), 'attr') ?>" target="_blank" rel="noopener">
+            <?= esc(theme_option('cta_label', 'Contáctanos por WhatsApp')) ?>
         </a>
 
         <button class="st-nav__toggle" id="st-nav-toggle" type="button" aria-expanded="false" aria-controls="st-nav-menu" aria-label="Toggle menu">

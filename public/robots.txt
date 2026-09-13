@@ -9,4 +9,4 @@ Allow: /
 Disallow: /admin/
 Disallow: /writable/
 
-Sitemap: http://localhost:8080/sitemap.xml
+Sitemap: https://snorkelpenida.com/sitemap.xml
