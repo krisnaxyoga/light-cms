@@ -1,10 +1,12 @@
 /* LightCMS default theme — deliberately small (PRD §2.2: frontend CSS < 50KB) */
 
 :root {
-  --lcms-primary: #3498db;
-  --lcms-secondary: #2ecc71;
-  --lcms-text: #222;
-  --lcms-bg: #fff;
+  --lcms-primary: #0077b6;   /* Ocean Blue — primary button, navbar, link */
+  --lcms-secondary: #ff6b5a; /* Warm Coral — CTA penting, promo */
+  --lcms-accent: #00b4d8;    /* Tropical Turquoise — accent, highlight */
+  --lcms-text: #023047;      /* Deep Navy — heading, text */
+  --lcms-bg: #fff8ed;        /* Sand/Off White — page background */
+  --lcms-surface: #ffffff;   /* White — card & section */
   --lcms-border: #e5e5e5;
   --lcms-radius: 6px;
 }
@@ -39,8 +41,21 @@ body {
 .lcms-logo { font-weight: 700; font-size: 1.25rem; color: var(--lcms-primary); text-decoration: none; }
 .lcms-nav ul { list-style: none; display: flex; gap: 20px; margin: 0; padding: 0; position: relative; }
 .lcms-nav a { text-decoration: none; color: var(--lcms-text); }
-.lcms-nav__submenu { display: none; position: absolute; background: var(--lcms-bg); border: 1px solid var(--lcms-border); padding: 8px 0; }
-.lcms-nav li:hover > .lcms-nav__submenu { display: block; }
+.lcms-nav__submenu { display: none; position: absolute; top: 100%; left: 0; z-index: 20; min-width: 180px; background: var(--lcms-surface); border: 1px solid var(--lcms-border); padding: 8px 0; }
+.lcms-nav__submenu li { position: relative; }
+.lcms-nav__submenu a { display: block; padding: 6px 16px; }
+/* A silo built in Admin -> Menus can nest more than one level deep — the
+   second selector re-triggers the same flyout rule for a sub-submenu,
+   positioned to the item's right instead of stacking underneath. */
+.lcms-nav li:hover > .lcms-nav__submenu,
+.lcms-nav__submenu li:hover > .lcms-nav__submenu { display: block; }
+.lcms-nav__submenu .lcms-nav__submenu { top: -9px; left: 100%; }
+
+/* Language switcher (Admin -> Languages); rendered only with 2+ active languages */
+.lcms-lang ul { list-style: none; display: flex; gap: 6px; margin: 0 0 0 16px; padding: 0; }
+.lcms-lang a { display: inline-block; padding: 4px 8px; border: 1px solid var(--lcms-border); border-radius: var(--lcms-radius); background: var(--lcms-surface); color: var(--lcms-text); font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-decoration: none; }
+.lcms-lang a:hover { border-color: var(--lcms-accent); color: var(--lcms-accent); }
+.lcms-lang a.is-active { background: var(--lcms-primary); border-color: var(--lcms-primary); color: #fff; }
 
 /* Layout */
 .lcms-main { padding: 32px 0; min-height: 60vh; }
@@ -75,13 +90,13 @@ body {
 .lcms-single__title { font-size: 2rem; margin-bottom: 8px; }
 .lcms-single__meta { color: #777; font-size: 0.875rem; }
 .lcms-single__image { width: 100%; border-radius: var(--lcms-radius); margin: 16px 0; }
-.lcms-tag { display: inline-block; margin-right: 8px; color: var(--lcms-primary); text-decoration: none; }
+.lcms-tag { display: inline-block; margin-right: 8px; color: var(--lcms-accent); text-decoration: none; }
 
 /* Blocks (rendered by BlockRenderer) */
 .lcms-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
 .lcms-gallery img { width: 100%; border-radius: var(--lcms-radius); }
 .lcms-columns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
-.lcms-cta { background: #f5f8fa; border-radius: var(--lcms-radius); padding: 24px; text-align: center; }
+.lcms-cta { background: var(--lcms-surface); border-radius: var(--lcms-radius); padding: 24px; text-align: center; }
 .lcms-accordion__item { border: 1px solid var(--lcms-border); border-radius: var(--lcms-radius); padding: 12px 16px; margin-bottom: 8px; }
 .lcms-spacer { width: 100%; }
 .lcms-separator { border: none; border-top: 1px solid var(--lcms-border); margin: 24px 0; }

@@ -11,12 +11,16 @@ class SchemaGenerator
 {
     public function article(array $post, array $author = [], ?string $image = null): array
     {
+        $locale = \Config\Services::locale();
+        $url    = post_url($post, $post['locale'] ?? null);
+
         return [
             '@context'      => 'https://schema.org',
             '@type'         => 'Article',
             'headline'      => $post['title'] ?? '',
             'description'   => $post['excerpt'] ?? '',
             'image'         => $image ? [$image] : [],
+            'inLanguage'    => $post['locale'] ?? $locale->current(),
             'datePublished' => $this->toIso($post['published_at'] ?? null),
             'dateModified'  => $this->toIso($post['updated_at'] ?? $post['published_at'] ?? null),
             'author'        => [
@@ -25,7 +29,7 @@ class SchemaGenerator
             ],
             'mainEntityOfPage' => [
                 '@type' => 'WebPage',
-                '@id'   => site_url($post['slug'] ?? ''),
+                '@id'   => $url,
             ],
         ];
     }

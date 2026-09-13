@@ -1396,7 +1396,6 @@
     if (!dom.tabPost) return;
     dom.tabPost.classList.toggle('is-active', state.tab === 'post');
     dom.tabBlock.classList.toggle('is-active', state.tab === 'block');
-    dom.tabBlock.disabled = !state.selected;
     dom.panelPost.hidden = state.tab !== 'post';
     dom.panelBlock.hidden = state.tab !== 'block';
     dom.sidebar.classList.toggle('is-open', state.sidebarOpen);
@@ -1778,7 +1777,11 @@
     dom.redoBtn.addEventListener('click', redo);
     $('#lcms-sidebar-toggle').addEventListener('click', function () { state.sidebarOpen = !state.sidebarOpen; renderSidebarTabs(); });
     dom.tabPost.addEventListener('click', function () { state.tab = 'post'; renderSidebarTabs(); });
-    dom.tabBlock.addEventListener('click', function () { if (state.selected) { state.tab = 'block'; renderSidebarTabs(); } });
+    // Always clickable, even with nothing selected yet — renderInspector()
+    // already shows a "Select a block…" hint in that case (set on the
+    // initial render() and kept in sync by select()), so there's no dead
+    // state to guard against here.
+    dom.tabBlock.addEventListener('click', function () { state.tab = 'block'; renderSidebarTabs(); });
     // "Save draft" is only rendered while the post isn't published yet.
     const saveDraft = $('#lcms-save-draft'); if (saveDraft) saveDraft.addEventListener('click', () => submitWith('draft'));
     $('#lcms-publish').addEventListener('click', () => submitWith('published'));

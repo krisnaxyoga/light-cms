@@ -9,6 +9,13 @@
  * JSON textarea did — PostController is unchanged.
  */
 $isEdit          = $post !== null;
+// A new post opened as a translation (?source=...) is pre-filled from the
+// source row; it is still a "create", so $isEdit stays false.
+$post            = $post ?? $prefill ?? null;
+$multilang       = $multilang ?? false;
+$languages       = $languages ?? [];
+$translations    = $translations ?? [];
+$currentLocale   = $post['locale'] ?? \Config\Services::locale()->defaultCode();
 $seo             = $post['seo_meta'] ?? [];
 $postCategoryIds = array_map('intval', array_column($post['categories'] ?? [], 'id'));
 $postTagNames    = implode(', ', array_column($post['tags'] ?? [], 'name'));
@@ -29,7 +36,9 @@ $editorConfig = [
     'blocks'     => is_array($decoded) ? $decoded : [],
     'rawContent' => $contentBroke ? $rawContent : null,
     'updatedAt' => ! empty($post['updated_at']) ? date(DATE_ATOM, strtotime($post['updated_at'])) : null,
-    'siteUrl'   => site_url(''),
+    // Permalink preview base — carries the language prefix (/id/...) for
+    // non-default languages.
+    'siteUrl'   => \Config\Services::locale()->url('', $currentLocale),
     'csrf'      => ['name' => csrf_token(), 'hash' => csrf_hash()],
     'endpoints' => [
         'analyze'   => site_url('admin/posts/analyze'),
@@ -55,6 +64,10 @@ $editorConfig = [
     <?= csrf_field() ?>
     <input type="hidden" name="post_type" value="<?= esc($postType) ?>">
     <input type="hidden" name="content" id="lcms-content" value="<?= esc($post['content'] ?? '[]') ?>">
+    <input type="hidden" name="translation_group_id" value="<?= esc($post['translation_group_id'] ?? '') ?>">
+    <?php if (! $multilang): ?>
+        <input type="hidden" name="locale" value="<?= esc($currentLocale) ?>">
+    <?php endif; ?>
 
     <!-- ============================== Top bar ============================== -->
     <header class="lcms-topbar">
@@ -81,7 +94,7 @@ $editorConfig = [
         <div class="lcms-topbar__group">
             <span class="lcms-topbar__status" id="lcms-save-indicator"></span>
             <?php if ($isEdit && $isPublished): ?>
-                <a class="lcms-topbar__btn" href="<?= site_url($post['slug']) ?>" target="_blank" rel="noopener" title="View on site">
+                <a class="lcms-topbar__btn" href="<?= post_url($post, $currentLocale) ?>" target="_blank" rel="noopener" title="View on site">
                     <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg>
                     Preview
                 </a>
@@ -120,7 +133,7 @@ $editorConfig = [
         <aside class="lcms-sidebar is-open" id="lcms-sidebar">
             <div class="lcms-sidebar__tabs">
                 <button type="button" class="lcms-sidebar__tab is-active" id="lcms-tab-post"><?= esc(ucfirst($postType)) ?></button>
-                <button type="button" class="lcms-sidebar__tab" id="lcms-tab-block" disabled>Block</button>
+                <button type="button" class="lcms-sidebar__tab" id="lcms-tab-block">Block</button>
             </div>
 
             <div class="lcms-sidebar__panel" id="lcms-panel-post">
@@ -151,6 +164,49 @@ $editorConfig = [
                         <?php endif; ?>
                     </div>
                 </details>
+
+                <?php if ($multilang): ?>
+                    <details class="lcms-panel-group" open>
+                        <summary>Language &amp; translations</summary>
+                        <div class="lcms-panel-group__body">
+                            <div class="lcms-field">
+                                <label>Language</label>
+                                <select name="locale">
+                                    <?php foreach ($languages as $lang): ?>
+                                        <option value="<?= esc($lang['code']) ?>" <?= $currentLocale === $lang['code'] ? 'selected' : '' ?>>
+                                            <?= esc($lang['name']) ?><?= (int) $lang['is_default'] === 1 ? ' (default)' : '' ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <?php if (! empty($post['source_title'])): ?>
+                                <span class="lcms-hint">Translating “<?= esc($post['source_title']) ?>” — replace the copied text with the translation, then publish.</span>
+                            <?php endif; ?>
+
+                            <?php if ($isEdit): ?>
+                                <?php foreach ($languages as $lang): ?>
+                                    <?php if ($lang['code'] === $currentLocale) { continue; } ?>
+                                    <?php $sibling = $translations[$lang['code']] ?? null; ?>
+                                    <div class="lcms-field__row">
+                                        <span style="flex:1"><?= esc($lang['name']) ?></span>
+                                        <?php if ($sibling): ?>
+                                            <a class="lcms-mini-btn" href="<?= site_url('admin/posts/' . $sibling['id'] . '/edit') ?>" title="<?= esc($sibling['title'], 'attr') ?>">
+                                                Edit (<?= esc($sibling['status']) ?>)
+                                            </a>
+                                        <?php else: ?>
+                                            <a class="lcms-mini-btn" href="<?= site_url('admin/' . ($postType === 'page' ? 'pages' : 'posts') . '/create?source=' . $post['id'] . '&locale=' . $lang['code']) ?>">
+                                                + Add translation
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php elseif (empty($post['source_title'])): ?>
+                                <span class="lcms-hint">Save first — then you can add translations from here.</span>
+                            <?php endif; ?>
+                        </div>
+                    </details>
+                <?php endif; ?>
 
                 <details class="lcms-panel-group" open>
                     <summary>Featured image</summary>

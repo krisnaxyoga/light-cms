@@ -15,7 +15,7 @@
             <h3 class="lcms-widget__title">Recent Posts</h3>
             <ul>
                 <?php foreach ($recentPosts as $recent): ?>
-                    <li><a href="<?= esc(site_url($recent['slug']), 'attr') ?>"><?= esc($recent['title']) ?></a></li>
+                    <li><a href="<?= esc(post_url($recent), 'attr') ?>"><?= esc($recent['title']) ?></a></li>
                 <?php endforeach; ?>
             </ul>
         </section>

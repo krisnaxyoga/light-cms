@@ -57,12 +57,25 @@ class AutoSeoGenerator
      * autoDetectFAQSchema). Deliberately simple pattern matching — a false
      * negative here just means no FAQ schema, which is safe.
      *
+     * Two guards keep this from over-matching ordinary prose:
+     *  - `</h\1>` backreferences the opening level, so an <h2> can't be
+     *    "closed" by the next <h3> down the page (they used to match as
+     *    one pair, concatenating both headings' text into a single bogus
+     *    "question").
+     *  - the heading must actually contain a "?" — a real FAQ is phrased
+     *    as a question; a normal section heading immediately followed by
+     *    its own explanatory paragraph (extremely common outside of FAQ
+     *    content) isn't one, and neither is a CTA block's title (it
+     *    renders as an <h3> too). A false negative here just means no FAQ
+     *    schema, which is safe; a false positive means mislabeling
+     *    ordinary content as a Google-eligible FAQ rich result, which isn't.
+     *
      * @return array<int, array{question: string, answer: string}>
      */
     public function detectFaqs(string $bodyHtml): array
     {
         preg_match_all(
-            '#<h[2-4][^>]*>(.*?)</h[2-4]>\s*<p>(.*?)</p>#is',
+            '#<h([2-4])[^>]*>(.*?)</h\1>\s*<p>(.*?)</p>#is',
             $bodyHtml,
             $matches,
             PREG_SET_ORDER
@@ -71,10 +84,10 @@ class AutoSeoGenerator
         $faqs = [];
 
         foreach ($matches as $match) {
-            $question = trim(strip_tags($match[1]));
-            $answer   = trim(strip_tags($match[2]));
+            $question = trim(strip_tags($match[2]));
+            $answer   = trim(strip_tags($match[3]));
 
-            if ($question !== '' && $answer !== '') {
+            if ($question !== '' && $answer !== '' && str_contains($question, '?')) {
                 $faqs[] = ['question' => $question, 'answer' => $answer];
             }
         }

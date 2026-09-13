@@ -14,8 +14,20 @@ class MediaModel extends Model
     protected $updatedField  = '';
 
     protected $allowedFields = [
-        'filename', 'filepath', 'filetype', 'filesize', 'width', 'height',
+        'filename', 'title', 'filepath', 'filetype', 'filesize', 'width', 'height',
         'variants', 'alt_text', 'caption', 'uploaded_by',
+    ];
+
+    protected $validationRules = [
+        // Only enforced when 'filename' is actually present in the data
+        // being validated (i.e. a rename) — MediaController::update() only
+        // includes it then, so a plain title/alt-text save never touches
+        // this rule at all. Deliberately NOT is_unique: `filename` alone
+        // (e.g. "photo.jpg") is only meaningful scoped to its own
+        // uploads/YYYY/MM/ folder, and two different months can legitimately
+        // share a bare name with no real collision — MediaController checks
+        // the actual filesystem path for that instead.
+        'filename' => 'permit_empty|max_length[255]|regex_match[/^[A-Za-z0-9._-]+$/]',
     ];
 
     protected array $casts = [

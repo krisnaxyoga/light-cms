@@ -13,8 +13,8 @@
   "settings": {
     "layout": "boxed",
     "sidebar_position": "right",
-    "primary_color": "#3498db",
-    "secondary_color": "#2ecc71"
+    "primary_color": "#0077b6",
+    "secondary_color": "#ff6b5a"
   },
   "menus": {
     "primary": "Primary Menu",

@@ -1,0 +1,31 @@
+{
+  "name": "Super Travel",
+  "version": "1.0.0",
+  "author": "LightCMS",
+  "description": "Ocean-toned booking/landing theme for tour operators — Ocean Blue, Warm Coral and Turquoise on a Sand background, with a staggered blog/portfolio grid for the inner pages.",
+  "support": {
+    "widgets": true,
+    "menus": true,
+    "custom_logo": true,
+    "custom_colors": true,
+    "custom_fonts": false
+  },
+  "settings": {
+    "layout": "full-width",
+    "sidebar_position": "none",
+    "primary_color": "#0077B6",
+    "secondary_color": "#FF6B5A",
+    "cta_label": "Reserva Ahora",
+    "cta_url": "/#pricing",
+    "services_heading": "What we cover",
+    "portfolio_heading": "Latest stories",
+    "whatsapp_message": "Hola Snorkel Penida, estoy interesado/a en tus tours de snorkel. ¿Me podrías dar más información?"
+  },
+  "menus": {
+    "primary": "Primary Menu",
+    "footer": "Footer Menu"
+  },
+  "widget_areas": {
+    "footer_1": "Footer Column 1"
+  }
+}

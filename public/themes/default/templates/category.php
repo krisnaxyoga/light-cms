@@ -10,7 +10,7 @@
         <?php foreach ($posts ?? [] as $post): ?>
             <article class="lcms-post-card">
                 <h2 class="lcms-post-card__title">
-                    <a href="<?= esc(site_url($post['slug']), 'attr') ?>"><?= esc($post['title']) ?></a>
+                    <a href="<?= esc(post_url($post), 'attr') ?>"><?= esc($post['title']) ?></a>
                 </h2>
                 <p class="lcms-post-card__meta"><?= esc(lcms_time_ago($post['published_at'] ?? '')) ?></p>
                 <p class="lcms-post-card__excerpt"><?= esc(lcms_excerpt($post['excerpt'] ?? '', 30)) ?></p>

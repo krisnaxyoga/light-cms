@@ -42,11 +42,13 @@ if (! function_exists('theme_get_related_posts')) {
         }
 
         return \Config\Database::connect()->table('posts p')
-            ->select('p.id, p.title, p.slug, p.featured_image, p.published_at')
+            ->select('p.id, p.title, p.slug, p.post_type, p.locale, p.featured_image, p.published_at')
             ->distinct()
             ->join('post_categories pc', 'pc.post_id = p.id')
             ->whereIn('pc.category_id', $categoryIds)
             ->where('p.id !=', $post['id'])
+            ->where('p.locale', $post['locale'] ?? current_locale())
+            ->where('p.post_type', 'post')
             ->where('p.status', 'published')
             ->orderBy('p.published_at', 'DESC')
             ->limit($limit)

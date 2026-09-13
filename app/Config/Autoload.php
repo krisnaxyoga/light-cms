@@ -88,5 +88,5 @@ class Autoload extends AutoloadConfig
      *
      * @var list<string>
      */
-    public $helpers = ['text', 'seo_helper', 'theme_helper', 'content_helper', 'wordpress_helper'];
+    public $helpers = ['text', 'seo_helper', 'theme_helper', 'content_helper', 'wordpress_helper', 'homepage_helper', 'whatsapp_helper'];
 }

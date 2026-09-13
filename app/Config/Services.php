@@ -5,6 +5,7 @@ namespace Config;
 use App\Libraries\Cache\CacheManager;
 use App\Libraries\Cache\QueryCache;
 use App\Libraries\Editor\BlockRenderer;
+use App\Libraries\I18n\LocaleManager;
 use App\Libraries\Media\ImageProcessor;
 use App\Libraries\SEO\Analyzer;
 use App\Libraries\SEO\AutoSeoGenerator;
@@ -135,6 +136,20 @@ class Services extends BaseService
         }
 
         return new RobotsTxtGenerator();
+    }
+
+    /**
+     * Request language context (Admin -> Languages). Shared so the locale
+     * LocaleFilter resolves from the URL is what every controller, helper
+     * and SEO builder sees for the rest of the request.
+     */
+    public static function locale($getShared = true): LocaleManager
+    {
+        if ($getShared) {
+            return static::getSharedInstance('locale');
+        }
+
+        return new LocaleManager();
     }
 
     public static function imageProcessor($getShared = true): ImageProcessor

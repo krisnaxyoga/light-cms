@@ -90,6 +90,14 @@ class LightCMS extends BaseConfig
     public int $imageQuality = 85;
     public bool $imageGenerateWebP = true;
 
+    /**
+     * Hard cap on the generated WebP variant's file size, in bytes — every
+     * upload's 'webp' variant (ImageProcessor::toWebP()) is compressed
+     * (and, if that alone isn't enough, downscaled) until it fits under
+     * this, however large or high-quality the original was.
+     */
+    public int $imageWebPMaxBytes = 120 * 1024;
+
     /** name => [width, height], cropped with 'fit' (center crop). */
     public array $imageThumbnailSizes = [
         'thumbnail' => [150, 150],

@@ -161,7 +161,6 @@ body.lcms-editor-page .lcms-canvas-wrap[data-device="mobile"] textarea.lcms-titl
 .lcms-sidebar__tabs { display: flex; border-bottom: 1px solid var(--ed-border); }
 .lcms-sidebar__tab { flex: 1; padding: 14px 8px; border: none; background: transparent; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--ed-text); border-bottom: 3px solid transparent; }
 .lcms-sidebar__tab.is-active { border-bottom-color: var(--ed-accent); color: var(--ed-accent); }
-.lcms-sidebar__tab:disabled { color: #bbb; cursor: default; }
 .lcms-sidebar__panel { overflow-y: auto; flex: 1; }
 .lcms-panel-group { border-bottom: 1px solid var(--ed-border); }
 .lcms-panel-group > summary { list-style: none; cursor: pointer; padding: 14px 16px; font-weight: 600; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }

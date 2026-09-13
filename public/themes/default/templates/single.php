@@ -39,7 +39,7 @@
                 <h3>Related Posts</h3>
                 <ul>
                     <?php foreach ($related as $item): ?>
-                        <li><a href="<?= esc(site_url($item['slug']), 'attr') ?>"><?= esc($item['title']) ?></a></li>
+                        <li><a href="<?= esc(post_url($item), 'attr') ?>"><?= esc($item['title']) ?></a></li>
                     <?php endforeach; ?>
                 </ul>
             </section>

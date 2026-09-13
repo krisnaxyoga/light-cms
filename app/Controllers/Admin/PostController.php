@@ -25,10 +25,11 @@ class PostController extends BaseController
 
     public function index(string $postType = 'post')
     {
-        $status = $this->request->getGet('status');
+        $status       = $this->request->getGet('status');
+        $localeFilter = (string) $this->request->getGet('locale');
 
         $query = $this->postModel
-            ->select('posts.id, posts.title, posts.slug, posts.status, posts.author_id, posts.published_at, posts.updated_at, seo_meta.seo_score')
+            ->select('posts.id, posts.title, posts.slug, posts.locale, posts.status, posts.author_id, posts.published_at, posts.updated_at, seo_meta.seo_score')
             ->join('seo_meta', 'seo_meta.post_id = posts.id', 'left')
             ->where('posts.post_type', $postType)
             ->orderBy('posts.updated_at', 'DESC');
@@ -37,28 +38,77 @@ class PostController extends BaseController
             $query->where('posts.status', $status);
         }
 
+        if ($localeFilter !== '') {
+            $query->where('posts.locale', $localeFilter);
+        }
+
         $posts = $query->paginate(20);
 
         return view('admin/posts/index', [
-            'posts'    => $posts,
-            'pager'    => $this->postModel->pager,
-            'postType' => $postType,
+            'posts'        => $posts,
+            'pager'        => $this->postModel->pager,
+            'postType'     => $postType,
+            'multilang'    => Services::locale()->enabled(),
+            'languages'    => Services::locale()->all(),
+            'localeFilter' => $localeFilter,
         ]);
     }
 
+    /**
+     * New post/page. With ?source={id}&locale={code} it opens pre-filled
+     * as a translation of that post (same translation group, copied
+     * content to translate in place, same categories/tags).
+     */
     public function create(string $postType = 'post')
     {
+        $locale   = Services::locale();
+        $sourceId = (int) $this->request->getGet('source');
+        $target   = (string) $this->request->getGet('locale') ?: $locale->defaultCode();
+        $prefill  = null;
+
+        if ($locale->find($target) === null) {
+            $target = $locale->defaultCode();
+        }
+
+        if ($sourceId && ($source = $this->postModel->find($sourceId))) {
+            $source   = $this->postModel->withRelations($source);
+            $postType = $source['post_type'];
+            $prefill  = [
+                'title'                => $source['title'],
+                'content'              => $source['content'],
+                'excerpt'              => $source['excerpt'],
+                'featured_image'       => $source['featured_image'],
+                'comment_status'       => $source['comment_status'],
+                'categories'           => $source['categories'],
+                'tags'                 => $source['tags'],
+                'locale'               => $target,
+                'translation_group_id' => $source['translation_group_id'] ?: $source['id'],
+                'source_id'            => $source['id'],
+                'source_title'         => $source['title'],
+            ];
+        }
+
         return view('admin/posts/form', [
-            'post'       => null,
-            'postType'   => $postType,
-            'categories' => (new CategoryModel())->findAll(),
-            'tags'       => (new TagModel())->findAll(),
+            'post'         => null,
+            'prefill'      => $prefill ?? ['locale' => $target],
+            'postType'     => $postType,
+            'categories'   => (new CategoryModel())->findAll(),
+            'tags'         => (new TagModel())->findAll(),
+            'languages'    => $locale->active(),
+            'multilang'    => $locale->enabled(),
+            'translations' => [],
         ]);
     }
 
     public function store()
     {
         $data = $this->collectPostInput();
+
+        if ($conflict = $this->translationConflict($data)) {
+            session()->setFlashdata('errors', [$conflict]);
+
+            return redirect()->back()->withInput();
+        }
 
         if (! $this->postModel->insert($data, false)) {
             session()->setFlashdata('errors', $this->postModel->errors());
@@ -71,9 +121,9 @@ class PostController extends BaseController
         $this->saveSeoMeta($postId);
 
         (new ActivityLogModel())->record(session('userId'), 'create', 'post', $postId);
-        session()->setFlashdata('success', 'Post created.');
+        session()->setFlashdata('success', ($data['post_type'] === 'page' ? 'Page' : 'Post') . ' created.');
 
-        return redirect()->to('/admin/posts');
+        return redirect()->to($data['post_type'] === 'page' ? '/admin/pages' : '/admin/posts');
     }
 
     public function edit(int $id)
@@ -84,19 +134,30 @@ class PostController extends BaseController
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
         }
 
-        $post = $this->postModel->withRelations($post);
+        $post   = $this->postModel->withRelations($post);
+        $locale = Services::locale();
 
         return view('admin/posts/form', [
-            'post'       => $post,
-            'postType'   => $post['post_type'],
-            'categories' => (new CategoryModel())->findAll(),
-            'tags'       => (new TagModel())->findAll(),
+            'post'         => $post,
+            'prefill'      => null,
+            'postType'     => $post['post_type'],
+            'categories'   => (new CategoryModel())->findAll(),
+            'tags'         => (new TagModel())->findAll(),
+            'languages'    => $locale->active(),
+            'multilang'    => $locale->enabled(),
+            'translations' => $this->postModel->translations($post['translation_group_id'] ?? null, false),
         ]);
     }
 
     public function update(int $id)
     {
         $data = $this->collectPostInput($id);
+
+        if ($conflict = $this->translationConflict($data, $id)) {
+            session()->setFlashdata('errors', [$conflict]);
+
+            return redirect()->back()->withInput();
+        }
 
         if (! $this->postModel->update($id, $data)) {
             session()->setFlashdata('errors', $this->postModel->errors());
@@ -111,9 +172,9 @@ class PostController extends BaseController
         Services::cacheManager()->flushTag('posts');
 
         (new ActivityLogModel())->record(session('userId'), 'update', 'post', $id);
-        session()->setFlashdata('success', 'Post updated.');
+        session()->setFlashdata('success', ($data['post_type'] === 'page' ? 'Page' : 'Post') . ' updated.');
 
-        return redirect()->to('/admin/posts');
+        return redirect()->to($data['post_type'] === 'page' ? '/admin/pages' : '/admin/posts');
     }
 
     public function trash(int $id)
@@ -170,14 +231,22 @@ class PostController extends BaseController
         $blocks     = $parser->parse((string) $this->request->getPost('content'));
         $contentRaw = $parser->serialize($blocks);
 
-        return [
-            // Only present so the `is_unique[posts.slug,id,{id}]` rule can
-            // resolve its {id} placeholder against *this* row on update;
-            // doProtectFields() strips it again before the actual SQL
-            // UPDATE since 'id' isn't in $allowedFields.
+        $locale = Services::locale();
+        $code   = (string) $this->request->getPost('locale') ?: $locale->defaultCode();
+
+        if ($locale->find($code) === null) {
+            $code = $locale->defaultCode();
+        }
+
+        $data = [
+            // Only present so the slug rules can exclude *this* row on
+            // update (see PostModel::$validationRules); doProtectFields()
+            // strips it again before the actual SQL UPDATE since 'id'
+            // isn't in $allowedFields.
             'id'              => $id,
             'title'           => $title,
             'slug'            => $slug,
+            'locale'          => $code,
             'content'         => $contentRaw,
             'excerpt'         => (string) $this->request->getPost('excerpt') ?: lcms_excerpt($parser->toPlainText($blocks)),
             'author_id'       => (int) ($this->request->getPost('author_id') ?: session('userId')),
@@ -189,6 +258,35 @@ class PostController extends BaseController
                 ? ($this->request->getPost('published_at') ?: date('Y-m-d H:i:s'))
                 : $this->request->getPost('published_at'),
         ];
+
+        // Absent = "this is an original": PostModel assigns the group on insert.
+        if ($groupId = (int) $this->request->getPost('translation_group_id')) {
+            $data['translation_group_id'] = $groupId;
+        }
+
+        return $data;
+    }
+
+    /**
+     * One language version per translation group — creating a second
+     * Indonesian copy of the same post would leave the switcher and
+     * hreflang tags ambiguous.
+     */
+    protected function translationConflict(array $data, ?int $selfId = null): ?string
+    {
+        if (empty($data['translation_group_id'])) {
+            return null;
+        }
+
+        $sibling = $this->postModel->translations((int) $data['translation_group_id'], false)[$data['locale']] ?? null;
+
+        if ($sibling && (int) $sibling['id'] !== (int) $selfId) {
+            $lang = Services::locale()->find($data['locale']);
+
+            return 'A ' . ($lang['name'] ?? $data['locale']) . " version of this content already exists (\"{$sibling['title']}\").";
+        }
+
+        return null;
     }
 
     protected function saveTaxonomies(int $postId): void

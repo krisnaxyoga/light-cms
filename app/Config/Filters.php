@@ -13,6 +13,7 @@ use CodeIgniter\Filters\PageCache;
 use CodeIgniter\Filters\PerformanceMetrics;
 use CodeIgniter\Filters\SecureHeaders;
 use App\Filters\AdminAuthFilter;
+use App\Filters\LocaleFilter;
 
 class Filters extends BaseFilters
 {
@@ -36,6 +37,7 @@ class Filters extends BaseFilters
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
         'adminAuth'     => AdminAuthFilter::class,
+        'locale'        => LocaleFilter::class,
     ];
 
     /**
@@ -77,7 +79,12 @@ class Filters extends BaseFilters
             // 'honeypot',
             // WordPress endpoints authenticate with WP nonces (wp_verify_nonce),
             // not CodeIgniter's session CSRF token, so they are exempted here.
-            'csrf' => ['except' => ['api/*', 'wp-admin/*', 'wp-json/*', 'admin/wp/options']],
+            // deploy/webhook authenticates with GitLab's X-Gitlab-Token header
+            // instead (see DeployWebhookController) — GitLab's POST body
+            // carries no CI4 CSRF token either.
+            'csrf' => ['except' => ['api/*', 'wp-admin/*', 'wp-json/*', 'admin/wp/options', 'deploy/webhook']],
+            // Frontend language detection from the URL prefix (Admin -> Languages).
+            'locale' => ['except' => ['admin', 'admin/*', 'api/*', 'wp-admin/*', 'wp-json/*', 'deploy/webhook']],
             // 'invalidchars',
         ],
         'after' => [

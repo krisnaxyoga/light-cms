@@ -52,8 +52,8 @@ class InitialSeeder extends Seeder
             'settings'   => json_encode([
                 'layout'           => 'boxed',
                 'sidebar_position' => 'right',
-                'primary_color'    => '#3498db',
-                'secondary_color'  => '#2ecc71',
+                'primary_color'    => '#0077b6',
+                'secondary_color'  => '#ff6b5a',
             ]),
             'created_at' => $now,
             'updated_at' => $now,
@@ -85,6 +85,9 @@ class InitialSeeder extends Seeder
             'robots_index'       => '1',
             'robots_follow'      => '1',
             'robots_crawl_delay' => '',
+            // Single source of truth for every WhatsApp CTA on the site —
+            // see app/Helpers/whatsapp_helper.php.
+            'whatsapp_number'    => '+62 822 8263 8682',
         ];
 
         foreach ($settings as $key => $value) {

@@ -9,8 +9,13 @@ use Config\Services;
 class SettingsController extends BaseController
 {
     protected array $textKeys = [
-        'site_title', 'site_description', 'posts_per_page', 'excerpt_length',
+        'site_title', 'site_description', 'site_logo', 'site_favicon',
+        'posts_per_page', 'excerpt_length',
         'timezone', 'seo_separator', 'default_og_image', 'robots_crawl_delay',
+        // Single source of truth for every WhatsApp CTA on the site — see
+        // app/Helpers/whatsapp_helper.php. Previously duplicated as a
+        // literal string in theme.json and in HomepageContent's defaults.
+        'whatsapp_number',
     ];
 
     /** Rendered as checkboxes — absent in $_POST means "unchecked", not "leave alone". */
