@@ -16,6 +16,9 @@ class SettingsController extends BaseController
         // app/Helpers/whatsapp_helper.php. Previously duplicated as a
         // literal string in theme.json and in HomepageContent's defaults.
         'whatsapp_number',
+        // Google Analytics (gtag.js) measurement ID, e.g. G-XXXXXXXXXX.
+        // Rendered in every theme's <head> — see layouts/header.php.
+        'google_analytics_id',
     ];
 
     /** Rendered as checkboxes — absent in $_POST means "unchecked", not "leave alone". */

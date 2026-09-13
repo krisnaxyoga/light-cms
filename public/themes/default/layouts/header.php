@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <?php $favicon = site_setting('site_favicon', ''); ?>
     <link rel="icon" href="<?= esc($favicon !== '' ? $favicon : base_url('favicon.ico'), 'attr') ?>">
+    <?php if ($gaId = site_setting('google_analytics_id', '')): ?>
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=<?= esc($gaId, 'attr') ?>"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', '<?= esc($gaId, 'js') ?>');
+        </script>
+    <?php endif; ?>
     <?= $seoHtml ?? '<title>' . esc(site_setting('site_title', 'LightCMS')) . '</title>' ?>
     <?php theme_styles(); ?>
 </head>

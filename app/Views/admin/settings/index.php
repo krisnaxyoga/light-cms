@@ -125,6 +125,21 @@ $imageField = function (string $name, string $label, string $value, ?string $hin
         </div>
     </section>
 
+    <section class="card border border-base-300 bg-base-100">
+        <div class="card-body gap-3 p-4 md:p-5">
+            <h2 class="card-title text-base">Analytics</h2>
+
+            <label class="form-control w-full max-w-xs">
+                <div class="label py-1"><span class="label-text">Google Analytics measurement ID</span></div>
+                <input type="text" name="google_analytics_id" value="<?= esc($settings['google_analytics_id'] ?? '') ?>"
+                       class="input input-bordered input-sm w-full" placeholder="G-XXXXXXXXXX">
+                <div class="label py-1">
+                    <span class="label-text-alt opacity-70">Adds the gtag.js tracking snippet to every page. Leave empty to disable tracking.</span>
+                </div>
+            </label>
+        </div>
+    </section>
+
     <section class="card border border-base-300 bg-base-100 lg:col-span-2">
         <div class="card-body gap-3 p-4 md:p-5">
             <h2 class="card-title text-base">Search engines</h2>

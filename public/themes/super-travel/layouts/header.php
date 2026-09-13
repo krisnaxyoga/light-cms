@@ -14,6 +14,17 @@
     <?php if ($favicon !== ''): ?>
         <link rel="apple-touch-icon" href="<?= esc($favicon, 'attr') ?>">
     <?php endif; ?>
+    <?php if ($gaId = site_setting('google_analytics_id', '')): ?>
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=<?= esc($gaId, 'attr') ?>"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+
+          gtag('config', '<?= esc($gaId, 'js') ?>');
+        </script>
+    <?php endif; ?>
     <?= $seoHtml ?? '<title>' . esc(site_setting('site_title', 'Super Travel')) . '</title>' ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
