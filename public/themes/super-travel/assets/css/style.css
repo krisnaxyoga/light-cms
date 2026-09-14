@@ -1444,6 +1444,47 @@ a { color: inherit; }
 .st-footer__bottom p { margin: 0; }
 
 /* -------------------------------------------------------------------- */
+/* Admin edit bar (st_admin_edit_bar(), functions.php)                  */
+/* Only ever rendered server-side for a logged-in admin — never shipped */
+/* in the markup a normal visitor receives — so this is deliberately    */
+/* styled to look distinct from every visitor-facing button (dark,      */
+/* dashed outline, "backstage" affect) rather than themed on-brand.     */
+/* -------------------------------------------------------------------- */
+
+.st-admin-edit {
+  position: fixed;
+  top: calc(var(--lcms-nav-height) + 16px);
+  right: 24px;
+  z-index: 90; /* below .st-nav (100), above ordinary page content */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--lcms-text);
+  color: var(--lcms-surface);
+  border: 1px dashed rgba(255, 255, 255, 0.4);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--lcms-shadow);
+  transition: transform 0.3s var(--lcms-ease), opacity 0.3s var(--lcms-ease);
+}
+.st-admin-edit:hover { transform: translateY(-2px); opacity: 0.9; }
+.st-admin-edit .ti { font-size: 16px; line-height: 1; }
+
+@media (max-width: 640px) {
+  .st-admin-edit {
+    top: auto;
+    bottom: 88px;
+    right: 16px;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  .st-admin-edit span { display: none; }
+}
+
+/* -------------------------------------------------------------------- */
 /* Floating actions (WhatsApp + back-to-top)                            */
 /* -------------------------------------------------------------------- */
 

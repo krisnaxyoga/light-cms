@@ -31,11 +31,22 @@
     <div class="overflow-x-auto">
         <table class="table table-sm">
             <thead>
-                <tr><th>Title</th><?php if ($multilang): ?><th>Language</th><?php endif; ?><th>Status</th><th>SEO</th><th>Updated</th><th class="text-right">Actions</th></tr>
+                <tr><th class="w-16"></th><th>Title</th><?php if ($multilang): ?><th>Language</th><?php endif; ?><th>Status</th><th>SEO</th><th>Updated</th><th class="text-right">Actions</th></tr>
             </thead>
             <tbody>
                 <?php foreach ($posts as $post): ?>
                     <tr class="hover">
+                        <td>
+                            <a href="<?= site_url('admin/posts/' . $post['id'] . '/edit') ?>" class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg border border-base-300 bg-base-200" title="Edit">
+                                <?php if (! empty($post['featured_image'])): ?>
+                                    <img src="<?= esc($post['featured_image'], 'attr') ?>" alt="" loading="lazy" class="h-full w-full object-cover">
+                                <?php else: ?>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 4.5h18v15H3v-15z" />
+                                    </svg>
+                                <?php endif; ?>
+                            </a>
+                        </td>
                         <td>
                             <a class="link link-hover font-medium" href="<?= site_url('admin/posts/' . $post['id'] . '/edit') ?>">
                                 <?= esc($post['title']) ?>
@@ -70,7 +81,7 @@
                 <?php endforeach; ?>
 
                 <?php if (empty($posts)): ?>
-                    <tr><td colspan="<?= $multilang ? 6 : 5 ?>" class="py-8 text-center opacity-60">No <?= esc($postType) ?>s yet.</td></tr>
+                    <tr><td colspan="<?= $multilang ? 7 : 6 ?>" class="py-8 text-center opacity-60">No <?= esc($postType) ?>s yet.</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>
