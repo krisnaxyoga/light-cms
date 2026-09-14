@@ -120,6 +120,7 @@ class BlockRenderer
 
         $this->blocks['image'] = function ($attrs) {
             $alt     = $this->attr($attrs, 'alt');
+            $title   = $this->attr($attrs, 'title');
             $align   = $this->attr($attrs, 'align');
             $url     = $this->attr($attrs, 'url');
             $caption = (string) ($attrs['caption'] ?? '');
@@ -129,8 +130,9 @@ class BlockRenderer
             // float/centre still works once the <img> is wrapped in a
             // <figure> (caption) or an <a> (link).
             $outerClass = $align !== '' ? " class=\"{$align}\"" : '';
+            $titleAttr  = $title !== '' ? " title=\"{$title}\"" : '';
 
-            $img = "<img src=\"{$url}\" alt=\"{$alt}\"" . ($caption === '' && $link === '' ? " class=\"{$align}\"" : '') . ' loading="lazy">';
+            $img = "<img src=\"{$url}\" alt=\"{$alt}\"{$titleAttr}" . ($caption === '' && $link === '' ? " class=\"{$align}\"" : '') . ' loading="lazy">';
 
             if ($link !== '') {
                 $img = '<a' . $link . ($caption === '' ? $outerClass : '') . '>' . $img . '</a>';
@@ -146,9 +148,11 @@ class BlockRenderer
         $this->blocks['gallery'] = function ($attrs) {
             $html = '<div class="lcms-gallery">';
             foreach ($attrs['images'] ?? [] as $image) {
-                $url = esc((string) ($image['url'] ?? ''));
-                $alt = esc((string) ($image['alt'] ?? ''));
-                $html .= "<img src=\"{$url}\" alt=\"{$alt}\" loading=\"lazy\">";
+                $url       = esc((string) ($image['url'] ?? ''));
+                $alt       = esc((string) ($image['alt'] ?? ''));
+                $title     = esc((string) ($image['title'] ?? ''));
+                $titleAttr = $title !== '' ? " title=\"{$title}\"" : '';
+                $html .= "<img src=\"{$url}\" alt=\"{$alt}\"{$titleAttr} loading=\"lazy\">";
             }
 
             return $html . '</div>';

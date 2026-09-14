@@ -610,3 +610,27 @@ if (! function_exists('st_footer_columns')) {
         ], theme_menu('footer'));
     }
 }
+
+if (! function_exists('st_admin_edit_bar')) {
+    /**
+     * WordPress-style "Edit this page/post" quick link: only rendered for
+     * a logged-in admin (same session key AdminAuthFilter/AuthController
+     * use — session('isLoggedIn')) viewing an actual post/page, so a
+     * regular visitor never sees or fetches anything extra. Fixed to the
+     * viewport rather than reserving layout space, so it never shifts the
+     * theme's own spacing/hero — a deliberate difference from WP's own
+     * body-pushing admin bar.
+     */
+    function st_admin_edit_bar(?array $post): string
+    {
+        if (! session()->get('isLoggedIn') || empty($post['id'])) {
+            return '';
+        }
+
+        $label = ($post['post_type'] ?? 'post') === 'page' ? 'Editar página' : 'Editar entrada';
+        $url   = site_url('admin/posts/' . (int) $post['id'] . '/edit');
+
+        return '<a class="st-admin-edit" href="' . esc($url, 'attr') . '" target="_blank" rel="noopener">'
+            . st_icon('pencil') . '<span>' . esc($label) . '</span></a>';
+    }
+}

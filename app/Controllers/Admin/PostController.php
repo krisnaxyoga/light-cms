@@ -29,7 +29,7 @@ class PostController extends BaseController
         $localeFilter = (string) $this->request->getGet('locale');
 
         $query = $this->postModel
-            ->select('posts.id, posts.title, posts.slug, posts.locale, posts.status, posts.author_id, posts.published_at, posts.updated_at, seo_meta.seo_score')
+            ->select('posts.id, posts.title, posts.slug, posts.locale, posts.status, posts.author_id, posts.featured_image, posts.published_at, posts.updated_at, seo_meta.seo_score')
             ->join('seo_meta', 'seo_meta.post_id = posts.id', 'left')
             ->where('posts.post_type', $postType)
             ->orderBy('posts.updated_at', 'DESC');

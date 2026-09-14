@@ -80,15 +80,16 @@ class MediaController extends BaseController
         $finalName = basename($processed['relativePath']);
         $wasBridged = $processed['relativePath'] !== $relativePath;
 
-        $altText = (string) $this->request->getPost('alt_text');
+        $altText  = (string) $this->request->getPost('alt_text');
+        $suggested = $this->imageProcessor->altTextFromFilename($originalName);
 
         if ($altText === '') {
-            $altText = $this->imageProcessor->altTextFromFilename($originalName);
+            $altText = $suggested;
         }
 
         $id = $this->mediaModel->insert([
             'filename'    => $finalName,
-            'title'       => $this->imageProcessor->altTextFromFilename($originalName),
+            'title'       => $suggested,
             'filepath'    => $processed['relativePath'],
             // A bridged upload's bytes are now actually PNG, whatever MIME
             // type the browser originally reported for the source format.
@@ -107,6 +108,10 @@ class MediaController extends BaseController
             'id'       => $id,
             'url'      => base_url($processed['relativePath']),
             'alt'      => $altText,
+            // The block editor's image/gallery blocks pick this up too, so
+            // a freshly-uploaded image already has a sensible title without
+            // a trip through Admin -> Media to set one after the fact.
+            'title'    => $suggested,
             'variants' => array_map(static fn ($path) => base_url($path), $processed['variants']),
         ]);
     }

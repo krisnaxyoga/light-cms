@@ -8,6 +8,8 @@ theme_header([
 ]);
 ?>
 
+<?= st_admin_edit_bar($post) ?>
+
 <!-- Pages open on a full-height typographic hero (dark ground, two blurred
      accent orbs, a huge title with an outlined "Nusa Penida" second line —
      see .lcms-page-hero below), then a bento grid of cards (st_render_bento(),

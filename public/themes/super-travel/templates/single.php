@@ -10,6 +10,8 @@ theme_header(['seoHtml' => ($seoHtml ?? null) . seo_breadcrumb_schema($trail) . 
 $share = st_share_links($post);
 ?>
 
+<?= st_admin_edit_bar($post) ?>
+
 <article class="st-article">
     <div class="st-section-inner st-section-inner--narrow">
         <?= theme_breadcrumbs($trail) ?>

@@ -205,7 +205,7 @@
     list:      { label: 'List', icon: 'list', category: 'text', keywords: 'bullet numbered ul ol', create: () => ({ type: 'list', attrs: { ordered: false, items: [''] }, content: '' }) },
     quote:     { label: 'Quote', icon: 'quote', category: 'text', text: true, keywords: 'blockquote cite', create: () => ({ type: 'quote', attrs: { cite: '' }, content: '' }) },
     code:      { label: 'Code', icon: 'code', category: 'text', keywords: 'pre source snippet', create: () => ({ type: 'code', attrs: { language: 'plaintext' }, content: '' }) },
-    image:     { label: 'Image', icon: 'image', category: 'media', keywords: 'photo picture img link backlink', create: () => ({ type: 'image', attrs: { url: '', alt: '', caption: '', align: '', href: '', link_target: '', rel: '' }, content: '' }) },
+    image:     { label: 'Image', icon: 'image', category: 'media', keywords: 'photo picture img link backlink', create: () => ({ type: 'image', attrs: { url: '', alt: '', title: '', caption: '', align: '', href: '', link_target: '', rel: '' }, content: '' }) },
     gallery:   { label: 'Gallery', icon: 'gallery', category: 'media', keywords: 'images photos grid', create: () => ({ type: 'gallery', attrs: { images: [] }, content: '' }) },
     video:     { label: 'Video', icon: 'video', category: 'media', keywords: 'movie mp4 youtube', create: () => ({ type: 'video', attrs: { url: '', embed: '' }, content: '' }) },
     audio:     { label: 'Audio', icon: 'audio', category: 'media', keywords: 'sound mp3 podcast', create: () => ({ type: 'audio', attrs: { url: '' }, content: '' }) },
@@ -893,11 +893,11 @@
       if (!a.url) {
         return mediaPlaceholder('image', 'Image', 'Upload an image file, pick one from your media library, or add one with a URL.', function (items) {
           const item = items[0];
-          updateAttrs(block.clientId, { url: item.url, alt: item.alt || a.alt || '' }, { refreshInspector: true });
+          updateAttrs(block.clientId, { url: item.url, alt: item.alt || a.alt || '', title: item.title || a.title || '' }, { refreshInspector: true });
         });
       }
       const fig = h('figure', { class: 'lcms-figure ' + (a.align || '') + (a.href ? ' is-linked' : '') });
-      const img = h('img', { src: a.url, alt: a.alt || '', draggable: false });
+      const img = h('img', { src: a.url, alt: a.alt || '', title: a.title || '', draggable: false });
       if (a.href) {
         // Rendered as a real anchor so alignment/wrapping matches the
         // frontend, but clicks stay inside the editor.
@@ -1091,7 +1091,7 @@
         }, { mediaUrl: block.attrs.url });
       }, { active: !!block.attrs.href });
       specific.append(linkBtn);
-      specific.append(tbButton('image', 'Replace image', () => openMediaPicker({ accept: 'image', onSelect: items => updateAttrs(block.clientId, { url: items[0].url, alt: items[0].alt || block.attrs.alt }, { refreshInspector: true }) })));
+      specific.append(tbButton('image', 'Replace image', () => openMediaPicker({ accept: 'image', onSelect: items => updateAttrs(block.clientId, { url: items[0].url, alt: items[0].alt || block.attrs.alt, title: items[0].title || block.attrs.title }, { refreshInspector: true }) })));
     }
     if (block.type === 'table') {
       specific.append(tbButton('addrow', 'Add row', () => { mutate(function () { const cols = (block.attrs.rows[0] || ['']).length; block.attrs.rows.push(new Array(cols).fill('')); }); select(block.clientId, { force: true }); }));
@@ -1356,7 +1356,13 @@
       url: function () {
         const input = h('input', { type: 'url', placeholder: 'https://example.com/file.' + (accept === 'image' ? 'jpg' : accept === 'video' ? 'mp4' : 'mp3'), autofocus: true });
         const alt = accept === 'image' ? h('input', { type: 'text', placeholder: 'Alt text (describe the image)' }) : null;
-        const form = h('div', { class: 'lcms-url-form' }, [h('label', { text: 'File URL' }), input, alt ? h('label', { text: 'Alt text' }) : null, alt, h('button', { type: 'button', class: 'lcms-btn lcms-btn--primary', text: 'Insert', onclick: function () { const url = safeHref(input.value); if (!url) { toast('Enter a valid http(s) URL', 'error'); return; } opts.onSelect([{ url: url, alt: alt ? alt.value : '' }]); close(); } })]);
+        const titleInput = accept === 'image' ? h('input', { type: 'text', placeholder: 'Title (tooltip on hover)' }) : null;
+        const form = h('div', { class: 'lcms-url-form' }, [
+          h('label', { text: 'File URL' }), input,
+          alt ? h('label', { text: 'Alt text' }) : null, alt,
+          titleInput ? h('label', { text: 'Title' }) : null, titleInput,
+          h('button', { type: 'button', class: 'lcms-btn lcms-btn--primary', text: 'Insert', onclick: function () { const url = safeHref(input.value); if (!url) { toast('Enter a valid http(s) URL', 'error'); return; } opts.onSelect([{ url: url, alt: alt ? alt.value : '', title: titleInput ? titleInput.value : '' }]); close(); } })
+        ]);
         setTimeout(() => input.focus(), 0);
         return form;
       }
@@ -1385,7 +1391,8 @@
     let json = {};
     try { json = await res.json(); } catch (e) { /* non-JSON error page */ }
     if (!res.ok || json.error) throw new Error(json.error || ('Upload failed (' + res.status + ')'));
-    return { id: json.id, url: json.url, alt: json.alt || titleCase(file.name.replace(/\.[^.]+$/, '')), variants: json.variants || {} };
+    const fallback = titleCase(file.name.replace(/\.[^.]+$/, ''));
+    return { id: json.id, url: json.url, alt: json.alt || fallback, title: json.title || fallback, variants: json.variants || {} };
   }
 
   /* ================================================================== */
@@ -1452,7 +1459,18 @@
     wrap.append(h('label', { text: label }));
     const input = h('input', { type: 'text', value: block.attrs[key] || '', placeholder: 'https://…' });
     input.addEventListener('input', function () { beforeTextChange(); block.attrs[key] = input.value.trim(); markDirty(); refreshBlock(block.clientId); });
-    const row = h('div', { class: 'lcms-field__row' }, [input, h('button', { type: 'button', class: 'lcms-btn', text: 'Choose', onclick: () => openMediaPicker({ accept: accept, onSelect: items => updateAttrs(block.clientId, { [key]: items[0].url }, { refreshInspector: true }) }) })]);
+    const row = h('div', { class: 'lcms-field__row' }, [input, h('button', { type: 'button', class: 'lcms-btn', text: 'Choose', onclick: () => openMediaPicker({ accept: accept, onSelect: items => {
+      const picked = items[0];
+      const attrs = { [key]: picked.url };
+      // Carry the library's own alt/title over too, but only for images —
+      // video/audio blocks share this same "Choose" button and have no
+      // alt/title attrs of their own.
+      if (accept === 'image') {
+        attrs.alt = picked.alt || block.attrs.alt || '';
+        attrs.title = picked.title || block.attrs.title || '';
+      }
+      updateAttrs(block.clientId, attrs, { refreshInspector: true });
+    } }) })]);
     wrap.append(row);
     return wrap;
   }
@@ -1481,6 +1499,7 @@
       case 'image':
         panel.append(mediaField(block, 'Image URL', 'url', 'image'));
         panel.append(textField(block, 'Alt text', 'alt', { textarea: true, hint: 'Describe the image for screen readers and SEO. Decorative images can stay empty.' }));
+        panel.append(textField(block, 'Title', 'title', { hint: 'Shown as a tooltip on hover. Optional — separate from the caption.' }));
         panel.append(textField(block, 'Caption', 'caption'));
         panel.append(selectField(block, 'Alignment', 'align', [['', 'None'], ['alignleft', 'Left'], ['aligncenter', 'Center'], ['alignright', 'Right'], ['alignwide', 'Wide']]));
         panel.append(h('div', { class: 'lcms-inspector__sub', text: 'Link' }));
