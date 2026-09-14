@@ -60,6 +60,12 @@
 #--------------------------------------------------------------------
 
 # session.driver = 'CodeIgniter\Session\Handlers\FileHandler'
+# Do NOT uncomment the line below to "unset" it — .env values are copied
+# into Config\Session as the literal string "null", not PHP null, which
+# sends every session write into a bogus relative "null/" folder that
+# doesn't exist and fatals on nearly every request. Leave savePath alone
+# (it already defaults to WRITEPATH . 'session' in app/Config/Session.php)
+# or set it to a real absolute path if you need to move it.
 # session.savePath = null
 
 #--------------------------------------------------------------------

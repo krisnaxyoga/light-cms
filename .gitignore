@@ -63,6 +63,15 @@ Vagrantfile
 /writable/debugbar/*
 !/writable/debugbar/index.html
 
+# Real media uploads live in public/uploads (see MediaController::upload),
+# not writable/uploads — this was never excluded, so 32 early files ended
+# up committed and any real `git reset`/fast-forward pull run straight
+# against the working tree (no shell access -> archive-copy deploy skips
+# this path, but a real git checkout doesn't know to) could alter or
+# remove them same as any other tracked file. Untracked going forward.
+/public/uploads/*
+!/public/uploads/index.html
+
 php_errors.log
 
 #-------------------------
