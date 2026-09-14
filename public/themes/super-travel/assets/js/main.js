@@ -21,6 +21,15 @@
             return;
         }
 
+        // threshold is a fraction of the *element's own* area, not the
+        // viewport's — a tall element (a full blog post body is one single
+        // .st-reveal wrapping every paragraph/heading, see single.php) can
+        // be several viewport-heights tall, so 15% of its total area may
+        // never be on-screen at once and isIntersecting would never fire,
+        // leaving the whole article permanently invisible (opacity: 0).
+        // threshold: 0 fires the instant any pixel of the element enters
+        // the viewport, so this works the same for a short card and a
+        // long article alike.
         var observer = new IntersectionObserver(function (entries, obs) {
             entries.forEach(function (entry) {
                 if (entry.isIntersecting) {
@@ -28,7 +37,7 @@
                     obs.unobserve(entry.target);
                 }
             });
-        }, { threshold: 0.15 });
+        }, { threshold: 0, rootMargin: '0px 0px -5% 0px' });
 
         items.forEach(function (el) { observer.observe(el); });
     }
