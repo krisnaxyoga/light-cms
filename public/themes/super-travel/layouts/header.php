@@ -65,8 +65,8 @@
             </div>
         <?php endif; ?>
 
-        <?php $ctaUrl = theme_option('cta_url', '') ?: whatsapp_url(); ?>
-        <a class="st-nav__cta" href="<?= esc(st_wa_link($ctaUrl), 'attr') ?>" target="_blank" rel="noopener">
+        <?php $ctaUrl = 'https://wa.me/6282282638682?text=Hello+Snorkeling+Penida%2C+I%27m+interested+in+your+snorkeling+trips.+Could+you+please+provide+more+information%3F'; ?>
+        <a class="st-nav__cta" href="<?= esc($ctaUrl, 'attr') ?>" target="_blank" rel="noopener">
             <?= esc(theme_option('cta_label', 'Contáctanos por WhatsApp')) ?>
         </a>
 
