@@ -658,6 +658,225 @@
     if (target) focusBlock(target.clientId, direction < 0 ? 'end' : 'start');
   }
 
+  /* ---- paste: rebuild real blocks from copied HTML / Markdown --------
+   * Selecting an AI reply (ChatGPT, Gemini, Claude, ...) and pasting it
+   * used to flatten everything to plain-text paragraphs, dropping
+   * headings, lists, code blocks and inline formatting. These two
+   * parsers rebuild actual blocks from whatever the clipboard gives us:
+   * rendered HTML (manual select+copy) or Markdown source (a page's own
+   * "Copy" button, which usually puts raw Markdown on text/plain). ---- */
+
+  // Google Docs, Word and some chat UIs don't export real <h1>-<h6> tags —
+  // a "heading" is just a short, bold, larger-font paragraph. Sniff for
+  // that pattern so those still come in as heading blocks instead of
+  // getting merged into the body text.
+  function inlineStyleNum(el, prop) {
+    const style = (el.getAttribute && el.getAttribute('style')) || '';
+    const m = new RegExp(prop + '\\s*:\\s*([\\d.]+)(px|pt)?|' + prop + '\\s*:\\s*(bold|bolder)', 'i').exec(style);
+    if (!m) return 0;
+    if (m[3]) return 700;
+    return (m[2] || 'px').toLowerCase() === 'pt' ? parseFloat(m[1]) * 1.3333 : parseFloat(m[1]);
+  }
+  function isBoldRun(el) {
+    return el.tagName === 'B' || el.tagName === 'STRONG' || inlineStyleNum(el, 'font-weight') >= 600;
+  }
+  function fakeHeadingLevel(p) {
+    const text = p.textContent.trim();
+    if (!text || text.length > 120 || /[.!?;:,]$/.test(text)) return 0;
+    const onlyChild = p.children.length === 1 && p.children[0].textContent.trim() === text ? p.children[0] : null;
+    const run = onlyChild || p;
+    const bold = isBoldRun(run) || isBoldRun(p);
+    const size = Math.max(inlineStyleNum(run, 'font-size'), inlineStyleNum(p, 'font-size'));
+    if (!bold && size < 18) return 0;
+    if (size >= 26) return 1;
+    if (size >= 19) return 2;
+    if (size >= 15) return 3;
+    return bold ? 2 : 0;
+  }
+
+  function blocksFromHtml(html) {
+    const tpl = document.createElement('template');
+    tpl.innerHTML = html;
+    const blocks = [];
+
+    function addParagraph(innerHtml) {
+      const content = sanitizeInline(innerHtml);
+      if (content) blocks.push(Object.assign(TYPES.paragraph.create(), { clientId: uid(), content: content }));
+    }
+
+    function walk(parent) {
+      let buffer = '';
+      const flush = () => { if (buffer) addParagraph(buffer); buffer = ''; };
+      Array.from(parent.childNodes).forEach(function (node) {
+        if (node.nodeType === 3) { buffer += escapeHtml(node.nodeValue); return; }
+        if (node.nodeType !== 1) return;
+        const tag = node.tagName;
+        if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'META' || tag === 'LINK') return;
+        if (tag === 'BR') { buffer += '<br>'; return; }
+        if (INLINE_TAGS[tag]) { buffer += node.outerHTML; return; }
+        flush();
+        if (/^H[1-6]$/.test(tag)) {
+          const content = sanitizeInline(node.innerHTML);
+          if (content) blocks.push(Object.assign(TYPES.heading.create(), { clientId: uid(), attrs: { level: Number(tag[1]) }, content: content }));
+        } else if (tag === 'P' || tag === 'FIGCAPTION') {
+          const level = tag === 'P' ? fakeHeadingLevel(node) : 0;
+          if (level) blocks.push(Object.assign(TYPES.heading.create(), { clientId: uid(), attrs: { level: level }, content: sanitizeInline(node.innerHTML) }));
+          else addParagraph(node.innerHTML);
+        } else if (tag === 'LI') {
+          addParagraph(node.innerHTML);
+        } else if (tag === 'UL' || tag === 'OL') {
+          const items = Array.from(node.children).filter(li => li.tagName === 'LI').map(li => sanitizeInline(li.innerHTML)).filter(Boolean);
+          if (items.length) blocks.push(Object.assign(TYPES.list.create(), { clientId: uid(), attrs: { ordered: tag === 'OL', items: items } }));
+        } else if (tag === 'BLOCKQUOTE') {
+          const content = sanitizeInline(node.innerHTML);
+          if (content) blocks.push(Object.assign(TYPES.quote.create(), { clientId: uid(), content: content }));
+        } else if (tag === 'PRE') {
+          const codeEl = node.querySelector('code') || node;
+          const lang = /(?:^|\s)language-(\S+)/.exec(codeEl.className || node.className || '');
+          blocks.push(Object.assign(TYPES.code.create(), { clientId: uid(), attrs: { language: lang ? lang[1] : 'plaintext' }, content: codeEl.textContent.replace(/\n+$/, '') }));
+        } else if (tag === 'HR') {
+          blocks.push(Object.assign(TYPES.separator.create(), { clientId: uid() }));
+        } else if (tag === 'TABLE') {
+          const rows = Array.from(node.querySelectorAll('tr')).map(tr => Array.from(tr.children).filter(c => c.tagName === 'TD' || c.tagName === 'TH').map(c => sanitizeInline(c.innerHTML)));
+          if (rows.length) blocks.push(Object.assign(TYPES.table.create(), { clientId: uid(), attrs: { rows: rows } }));
+        } else if (BLOCKISH.test(tag) || tag === 'MAIN' || tag === 'BODY') {
+          // Generic wrapper — chat UIs nest every message in a stack of
+          // divs, so recurse instead of flattening it into one paragraph.
+          walk(node);
+        } else {
+          buffer += node.outerHTML;
+        }
+      });
+      flush();
+    }
+
+    walk(tpl.content);
+    return blocks;
+  }
+
+  function looksLikeMarkdown(text) {
+    return /^```/m.test(text) || /^#{1,6}\s+\S/m.test(text) || /^>\s/m.test(text) ||
+      (text.match(/^\s{0,3}(?:[-*+]|\d+\.)\s+\S/gm) || []).length > 1;
+  }
+
+  function inlineMdToHtml(text) {
+    let s = escapeHtml(text);
+    s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+    s = s.replace(/\[([^\]\n]+)\]\((\S+?)\)/g, function (_, label, url) {
+      const href = safeHref(url.replace(/&amp;/g, '&'));
+      return href ? '<a href="' + escapeHtml(href) + '">' + label + '</a>' : label;
+    });
+    s = s.replace(/(\*\*|__)(?=\S)([\s\S]*?\S)\1/g, '<strong>$2</strong>');
+    s = s.replace(/(\*|_)(?=\S)([\s\S]*?\S)\1/g, '<em>$2</em>');
+    return sanitizeInline(s);
+  }
+
+  function blocksFromMarkdown(text) {
+    const lines = text.replace(/\r\n?/g, '\n').split('\n');
+    const blocks = [];
+    let buf = [];
+    const flush = () => {
+      const content = inlineMdToHtml(buf.join(' ').trim());
+      if (content) blocks.push(Object.assign(TYPES.paragraph.create(), { clientId: uid(), content: content }));
+      buf = [];
+    };
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+      if (!line.trim()) { flush(); i++; continue; }
+      const fence = /^```(\S*)\s*$/.exec(line);
+      const heading = /^(#{1,6})\s+(.*)$/.exec(line);
+      const hr = /^(?:-{3,}|\*{3,}|_{3,})\s*$/.exec(line);
+      const quote = /^>\s?(.*)$/.exec(line);
+      const ul = /^[-*+]\s+(.*)$/.exec(line);
+      const ol = /^\d+\.\s+(.*)$/.exec(line);
+      if (fence) {
+        flush();
+        const lang = fence[1] || 'plaintext';
+        const codeLines = [];
+        i++;
+        while (i < lines.length && !/^```\s*$/.test(lines[i])) { codeLines.push(lines[i]); i++; }
+        i++;
+        blocks.push(Object.assign(TYPES.code.create(), { clientId: uid(), attrs: { language: lang }, content: codeLines.join('\n') }));
+        continue;
+      }
+      if (heading) { flush(); blocks.push(Object.assign(TYPES.heading.create(), { clientId: uid(), attrs: { level: heading[1].length }, content: inlineMdToHtml(heading[2].trim()) })); i++; continue; }
+      if (hr) { flush(); blocks.push(Object.assign(TYPES.separator.create(), { clientId: uid() })); i++; continue; }
+      if (quote) {
+        flush();
+        const qLines = [quote[1]];
+        i++;
+        while (i < lines.length && /^>\s?/.test(lines[i])) { qLines.push(lines[i].replace(/^>\s?/, '')); i++; }
+        blocks.push(Object.assign(TYPES.quote.create(), { clientId: uid(), content: inlineMdToHtml(qLines.join(' ').trim()) }));
+        continue;
+      }
+      if (ul || ol) {
+        flush();
+        const ordered = !!ol;
+        const items = [];
+        while (i < lines.length) {
+          const m = ordered ? /^\d+\.\s+(.*)$/.exec(lines[i]) : /^[-*+]\s+(.*)$/.exec(lines[i]);
+          if (!m) break;
+          items.push(inlineMdToHtml(m[1].trim()));
+          i++;
+        }
+        blocks.push(Object.assign(TYPES.list.create(), { clientId: uid(), attrs: { ordered: ordered, items: items } }));
+        continue;
+      }
+      buf.push(line.trim());
+      i++;
+    }
+    flush();
+    return blocks;
+  }
+
+  // Last resort: some "Copy" buttons (several chat apps' included) hand
+  // over the AI reply fully rendered to plain text — no HTML, no Markdown
+  // syntax, just line breaks. The only cue left for a heading is that it
+  // sits alone on its own line, reads short, and isn't a sentence. This is
+  // a guess, not a parse — gated tightly, and anything it gets wrong is one
+  // click to turn back into a paragraph.
+  // Headings and hard-wrapped sentence fragments look identical by length
+  // and punctuation alone ("Nusa Penida, Indonesia: ..." vs. "This is a
+  // very long paragraph that somebody actually wrote"). Title Case is the
+  // one cheap signal that actually separates them: require most of the
+  // line's non-filler words to start with a capital letter.
+  const TITLE_STOPWORDS = new Set(['a', 'an', 'the', 'of', 'in', 'on', 'at', 'to', 'for', 'and', 'or', 'with', 'is', 'are', 'was', 'were', 'by', 'as', 'from', 'into', 'that', 'this', 'your', 'its']);
+  function looksLikeTitleLine(line) {
+    const t = line.trim();
+    if (!t || t.length > 100 || /[.!?;:,]$/.test(t) || !/^[A-Z0-9"'“(\[]/.test(t)) return false;
+    const words = t.replace(/[^A-Za-z0-9\s'-]/g, ' ').split(/\s+/).filter(Boolean);
+    if (!words.length) return false;
+    const significant = words.filter(w => !TITLE_STOPWORDS.has(w.toLowerCase()));
+    const pool = significant.length ? significant : words;
+    return pool.filter(w => /^[A-Z0-9]/.test(w)).length / pool.length >= 0.6;
+  }
+
+  function blocksFromPlainLines(text) {
+    const lines = text.replace(/\r\n?/g, '\n').split('\n');
+    if (lines.filter(l => l.trim()).length < 2) return null;
+    const blocks = [];
+    let buf = [];
+    let prevWasHeading = false;
+    const flush = () => {
+      if (buf.length) blocks.push(Object.assign(TYPES.paragraph.create(), { clientId: uid(), content: escapeHtml(buf.join(' ')) }));
+      buf = [];
+    };
+    lines.forEach(function (raw, idx) {
+      const line = raw.trim();
+      if (!line) { flush(); prevWasHeading = false; return; }
+      if (buf.length === 0 && lines[idx + 1] && lines[idx + 1].trim() && looksLikeTitleLine(line)) {
+        blocks.push(Object.assign(TYPES.heading.create(), { clientId: uid(), attrs: { level: prevWasHeading ? 3 : 2 }, content: escapeHtml(line) }));
+        prevWasHeading = true;
+        return;
+      }
+      buf.push(line);
+      prevWasHeading = false;
+    });
+    flush();
+    return blocks.length > 1 ? blocks : null;
+  }
+
   /* ---- rich text (paragraph / heading / quote / button / captions) --- */
 
   function richText(block, tag, opts) {
@@ -741,9 +960,55 @@
 
     editable.addEventListener('paste', function (e) {
       e.preventDefault();
-      const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+      const cd = e.clipboardData || window.clipboardData;
+      const text = cd.getData('text/plain') || '';
+      const html = cd.getData('text/html');
+
+      // Prefer whatever structure the clipboard actually carries: the HTML
+      // a manual select+copy produces (headings, lists, code, bold/italic/
+      // links), Markdown source (some "Copy" buttons put that on
+      // text/plain), or — when a "Copy" button hands over fully-rendered
+      // plain text with no markup left at all — a best-effort guess from
+      // line shape. Flat plain-text splitting below is the last resort.
+      let blocks = (html && /<[a-z][^>]*>/i.test(html)) ? blocksFromHtml(html) : null;
+      if ((!blocks || !blocks.length) && looksLikeMarkdown(text)) blocks = blocksFromMarkdown(text);
+      if (!blocks || !blocks.length) blocks = blocksFromPlainLines(text);
+
+      if (blocks && blocks.length && !opts.set && !opts.singleLine && block.type === 'paragraph') {
+        const found = locate(block.clientId);
+        const info = caretInfo(editable) || { beforeHtml: block.content, afterHtml: '' };
+        mutate(function () {
+          const last = blocks[blocks.length - 1];
+          if (info.afterHtml) {
+            if (isText(last)) last.content = (last.content || '') + info.afterHtml;
+            else blocks.push(Object.assign(TYPES.paragraph.create(), { clientId: uid(), content: info.afterHtml }));
+          }
+          if (info.beforeHtml) { found.block.content = info.beforeHtml; found.list.splice(found.index + 1, 0, ...blocks); }
+          else found.list.splice(found.index, 1, ...blocks);
+          state.selected = blocks[blocks.length - 1].clientId;
+        });
+        focusBlock(state.selected, 'end');
+        return;
+      }
+
+      // Can't (or shouldn't) explode this field into sibling blocks — a
+      // heading, a quote, a button label, a caption — but it can still
+      // keep inline formatting instead of flattening everything to a
+      // single plain-text run.
+      if (blocks && blocks.length) {
+        const pieces = blocks.map(function (b) {
+          if (isText(b)) return b.content || '';
+          if (b.type === 'list') return escapeHtml((b.attrs.items || []).map(stripTags).join(', '));
+          if (b.type === 'code') return escapeHtml(b.content || '');
+          if (b.type === 'table') return escapeHtml((b.attrs.rows || []).map(r => r.map(stripTags).join(' ')).join(' '));
+          return '';
+        }).filter(Boolean);
+        const joined = pieces.join(opts.singleLine ? ' ' : '<br><br>');
+        if (joined) { document.execCommand('insertHTML', false, joined); return; }
+      }
+
       const paragraphs = text.split(/\n{2,}/).map(s => s.trim()).filter(Boolean);
-      if (paragraphs.length > 1 && !opts.set && block.type === 'paragraph') {
+      if (paragraphs.length > 1 && !opts.set && !opts.singleLine && block.type === 'paragraph') {
         const found = locate(block.clientId);
         const info = caretInfo(editable) || { beforeHtml: block.content, afterHtml: '' };
         mutate(function () {
